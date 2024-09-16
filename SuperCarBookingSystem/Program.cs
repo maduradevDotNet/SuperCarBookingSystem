@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 using SuperCarBookingSystem.Models;
 using SuperCarBookingSystem.Services;
 
@@ -8,10 +9,21 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 
+// Configure MongoDB
 var mongoDbSetting = builder.Configuration.GetSection("MogoDbSetting").Get<MogoDbSetting>();
 builder.Services.Configure<MogoDbSetting>(builder.Configuration.GetSection("MogoDbSetting"));
+builder.Services.AddSingleton<IMongoClient>(sp =>
+{
+    return new MongoClient(mongoDbSetting.AtlasURL);
+});
+builder.Services.AddScoped(sp =>
+{
+    var client = sp.GetRequiredService<IMongoClient>();
+    var databaseName = mongoDbSetting.DatabaseName;
+    return client.GetDatabase(databaseName);
+});
 
-builder.Services.AddDbContext<CarBookingDbContext>(options => options.UseMongoDB(mongoDbSetting.AtlasURL ?? "", mongoDbSetting.DatabaseName ?? ""));
+
 
 var app = builder.Build();
 
